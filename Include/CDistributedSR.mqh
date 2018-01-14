@@ -15,9 +15,11 @@ private:
    CDownloadFile* _http;
    string         _symbol;
    int            _prevDay;
-   double         _srLevels[];
-   int            _levelCount;
+   double         _srLevelsW1[];
+   int            _levelCountW1;
    
+   double         _srLevelsD1[];
+   int            _levelCountD1;
    
    //----------------------------------------------------------------------
    void Clear()
@@ -42,8 +44,9 @@ private:
    //----------------------------------------------------------------------
    void LoadSR()
    {
-      _levelCount = 0;
       Clear();
+      _levelCountW1 = 0;
+      _levelCountD1 = 0;
       string key    = _symbol;
       StringToLower(key);
       
@@ -67,23 +70,44 @@ private:
          priceTxt = StringTrimLeft(priceTxt);
          priceTxt = StringTrimRight(priceTxt);
          if (StringLen(priceTxt) == 0) continue;
-         double price= StringToDouble(priceTxt);
-         _srLevels[_levelCount++] = price;
          
+         if (StringGetChar(priceTxt,0) == 100) // = d
+         {
+            priceTxt = StringSubstr(priceTxt, 1);
+            double price= StringToDouble(priceTxt);
+            _srLevelsD1[_levelCountD1++] = price;
+         }
+         else
+         {
+            double price= StringToDouble(priceTxt);
+            _srLevelsW1[_levelCountW1++] = price;
+         }
       }
    }
    
    //----------------------------------------------------------------------
    void DrawSR()
    {
-      for (int i=0; i < _levelCount; ++i)
+      // weekly levels
+      for (int i=0; i < _levelCountW1; ++i)
       {
-         string name= "~"+IntegerToString(i);
-         ObjectCreate(0, name, OBJ_HLINE, 0, 0, _srLevels[i]);
+         string name= "~w"+IntegerToString(i);
+         ObjectCreate(0, name, OBJ_HLINE, 0, 0, _srLevelsW1[i]);
          ObjectSet(name, OBJPROP_COLOR, clrBlack);
          ObjectSet(name, OBJPROP_WIDTH, 1);
          ObjectSet(name, OBJPROP_BACK, true);
          ObjectSet(name, OBJPROP_STYLE, STYLE_SOLID);
+      }
+      
+      // daily levels
+      for (int i=0; i < _levelCountD1; ++i)
+      {
+         string name= "~d"+IntegerToString(i);
+         ObjectCreate(0, name, OBJ_HLINE, 0, 0, _srLevelsD1[i]);
+         ObjectSet(name, OBJPROP_COLOR, clrPeru);
+         ObjectSet(name, OBJPROP_WIDTH, 1);
+         ObjectSet(name, OBJPROP_BACK, true);
+         ObjectSet(name, OBJPROP_STYLE, STYLE_DASH);
       }
    }
    
@@ -94,7 +118,8 @@ public:
       _symbol     = symbol;
       _prevDay    = 0;
       _http       = new CDownloadFile();
-      ArrayResize(_srLevels, 5000);
+      ArrayResize(_srLevelsW1, 5000);
+      ArrayResize(_srLevelsD1, 5000);
    }
    
    //----------------------------------------------------------------------
@@ -102,7 +127,8 @@ public:
    {
       Clear();
       delete _http;
-      ArrayFree(_srLevels);
+      ArrayFree(_srLevelsW1);
+      ArrayFree(_srLevelsD1);
    }
    
    //----------------------------------------------------------------------
